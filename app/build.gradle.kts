@@ -69,7 +69,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 
 
-
+    implementation("io.coil-kt:coil-compose:1.4.0")
     // KTOR
     implementation("io.ktor:ktor-client-core:2.2.3")
     implementation("io.ktor:ktor-client-cio:2.2.3")
