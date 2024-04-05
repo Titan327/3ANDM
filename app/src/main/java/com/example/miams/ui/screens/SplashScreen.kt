@@ -12,18 +12,44 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.example.miams.LocalDB.RecipesDatabase
+import com.example.miams.LocalDB.Tables.Recipes
 import com.example.miams.R
 import com.example.miams.ui.theme.Emerald
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+
 
 @Composable
 fun SplashScreen() {
+    val database = RecipesDatabase.getInstance(LocalContext.current.applicationContext)
+    val RecipesDAO = database.RecipesDAO()
+    val recipes = remember { mutableStateOf(listOf<Recipes>()) }
+
+    fun onAddRecipes() {
+        CoroutineScope(Dispatchers.IO).launch {
+            RecipesDAO.upsertRecipes(Recipes(title = "TestTest"))
+        }
+    }
+
+    fun getAllRecipes() {
+        CoroutineScope(Dispatchers.Main).launch {
+            val recipesList = RecipesDAO.getAllRecipes()
+            recipes.value = recipesList
+        }
+    }
+
+    getAllRecipes()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -32,9 +58,16 @@ fun SplashScreen() {
 
 
     ) {
+        
+        recipes.value.forEach{ recipe ->
+            Text(text = recipe.title)
+        }
+        
         Logo()
     }
 }
+
+
 
 @Composable
 fun Logo(modifier: Modifier = Modifier) {
