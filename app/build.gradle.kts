@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
     kotlin("plugin.serialization") version "1.9.23"
+    id("kotlin-kapt")
 }
 
 android {
@@ -75,4 +76,18 @@ dependencies {
     implementation("io.ktor:ktor-client-cio:2.2.3")
     implementation("io.ktor:ktor-client-content-negotiation:2.2.3")
     implementation("io.ktor:ktor-serialization-kotlinx-json:2.2.3")
+
+    implementation("androidx.navigation:navigation-compose:2.5.3")
+
+    // Splash screen
+    implementation("androidx.core:core-splashscreen:1.0.1")
+
+    // Room
+    implementation("androidx.room:room-runtime:2.5.0")
+    implementation("androidx.room:room-ktx:2.5.0")
+    annotationProcessor("androidx.room:room-compiler:2.5.0")
+    kapt("androidx.room:room-compiler:2.5.0")
+
+
+
 }

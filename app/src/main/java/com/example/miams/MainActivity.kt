@@ -11,21 +11,38 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.miams.ui.screens.SearchScreen
+import com.example.miams.ui.screens.SplashScreen
 import com.example.miams.ui.theme.MiamsTheme
+
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MiamsTheme {
+            MiamsTheme(dynamicColor = false) {
                 // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    //color = MaterialTheme.colorScheme.background
                 ) {
-                    Log.d("txt","test")
-                    SearchScreen()
+                    val navController = rememberNavController()
+                    val startDestination = "home"
+                    NavHost(navController = navController, startDestination = startDestination) {
+
+                        composable("splash") {
+                            SplashScreen()
+                        }
+                        composable("home") {
+                            SearchScreen()
+                        }
+
+                    }
+
                 }
             }
         }
