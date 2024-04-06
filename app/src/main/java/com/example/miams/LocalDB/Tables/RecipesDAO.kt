@@ -12,6 +12,11 @@ interface RecipesDAO {
     @Upsert
     suspend fun upsertRecipes(recipe: Recipes)
 
+    /*
+    @Query(value = "SELECT * FROM Recipes")
+    fun getAllRecipes(): Flow<List<Recipes>>
+     */
+
     @Query(value = "SELECT * FROM Recipes")
     suspend fun getAllRecipes(): List<Recipes>
 
