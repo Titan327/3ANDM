@@ -17,6 +17,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.miams.ui.screens.SearchScreen
 import com.example.miams.ui.screens.SplashScreen
 import com.example.miams.ui.theme.MiamsTheme
+import com.example.miams.ui.screens.HomeScreen
 
 
 
@@ -31,14 +32,17 @@ class MainActivity : ComponentActivity() {
                     //color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
-                    val startDestination = "splash"
+                    val startDestination = "home"
                     NavHost(navController = navController, startDestination = startDestination) {
 
                         composable("splash") {
                             SplashScreen()
                         }
-                        composable("home") {
+                        composable("search") {
                             SearchScreen()
+                        }
+                        composable ("home"){
+                            HomeScreen()
                         }
 
                     }
