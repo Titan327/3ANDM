@@ -1,11 +1,12 @@
 package com.example.miams.LocalDB.Tables
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "Recipes")
 data class Recipes(
-    @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val title: String,
+    @ColumnInfo(typeAffinity = ColumnInfo.BLOB) val image: ByteArray,
 )

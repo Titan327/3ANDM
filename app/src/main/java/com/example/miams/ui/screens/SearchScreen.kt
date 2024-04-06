@@ -41,13 +41,14 @@ fun SearchScreen(){
         scope.launch {
             try {
                 search.value = RecipeRepository().getSearchResult(1, "beef")
-                Log.d("test","on est la")
 
             } catch (e: Exception) {
                 Log.e("SearchScreen", "Error while getting search result for recipe", e)
             }
         }
     }
+
+
 
     if (search.value != null) {
 

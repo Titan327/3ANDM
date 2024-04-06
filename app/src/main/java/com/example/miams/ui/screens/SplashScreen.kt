@@ -1,5 +1,7 @@
 package com.example.miams.ui.screens
 
+import androidx.navigation.compose.NavHost
+import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.infiniteRepeatable
@@ -11,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Text
@@ -18,30 +21,55 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import com.example.miams.LocalDB.RecipesDatabase
 import com.example.miams.LocalDB.Tables.Recipes
 import com.example.miams.R
+import com.example.miams.http.repository.RecipeRepository
+import com.example.miams.http.types.SearchResponse
 import com.example.miams.ui.theme.Emerald
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
+import java.net.URL
+import java.sql.Blob
 
 
 @Composable
-fun SplashScreen() {
+fun SplashScreen(navController: NavHostController) {
     val database = RecipesDatabase.getInstance(LocalContext.current.applicationContext)
     val RecipesDAO = database.RecipesDAO()
     val recipes = remember { mutableStateOf(listOf<Recipes>()) }
 
-    fun onAddRecipes() {
+    val scope = rememberCoroutineScope()
+    val search = remember { mutableStateOf<SearchResponse?>(null) }
+
+    fun urlToByteArray(url: String): ByteArray {
+        val inputStream = URL(url).openStream()
+        val bytes = inputStream.readBytes()
+        inputStream.close()
+        return bytes
+    }
+
+    fun onAddRecipes(title: String,url: String) {
         CoroutineScope(Dispatchers.IO).launch {
-            RecipesDAO.upsertRecipes(Recipes(title = "TestTest"))
+            RecipesDAO.upsertRecipes(Recipes(title = title, image = urlToByteArray(url)))
+        }
+    }
+
+    fun deleteAllRecipes() {
+        CoroutineScope(Dispatchers.IO).launch {
+            RecipesDAO.deleteAllRecipes()
         }
     }
 
@@ -49,34 +77,41 @@ fun SplashScreen() {
         CoroutineScope(Dispatchers.Main).launch {
             val recipesList = RecipesDAO.getAllRecipes()
             recipes.value = recipesList
+
         }
     }
 
-    getAllRecipes()
+    LaunchedEffect(true) {
+        scope.launch {
+            try {
+                search.value = RecipeRepository().getSearchResult(1, "beef")
+
+            } catch (e: Exception) {
+                Log.e("SearchScreen", "Error while getting search result for recipe", e)
+            }
+        }
+    }
+
+    if (search.value != null) {
+        deleteAllRecipes()
+
+        search.value!!.results.forEach{ result ->
+
+            onAddRecipes(result.title, result.featured_image)
+
+        }
+        navController.navigate("home")
+    }
 
     Box(
         modifier = Modifier
-            .fillMaxSize(),
-            //.background(Emerald),
+            .fillMaxSize()
+            .background(Emerald),
         contentAlignment = Alignment.Center
 
 
     ) {
-
-        Column {
-            Text(text = "test")
-            recipes.value.forEach{ recipe ->
-
-                Text(text = recipe.title)
-            }
-            Button(
-                onClick = { onAddRecipes() },
-                content = { Text("Cliquer ici") }
-            )
-            
-        }
-        
-        //Logo()
+        Logo()
     }
 }
 

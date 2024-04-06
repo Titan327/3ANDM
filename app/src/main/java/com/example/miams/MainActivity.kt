@@ -35,7 +35,7 @@ class MainActivity : ComponentActivity() {
                     NavHost(navController = navController, startDestination = startDestination) {
 
                         composable("splash") {
-                            SplashScreen()
+                            SplashScreen(navController)
                         }
                         composable("home") {
                             SearchScreen()
