@@ -30,29 +30,42 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberImagePainter
 import androidx.compose.foundation.clickable
+import androidx.compose.material3.Card
 
 import com.example.miams.http.repository.RecipeRepository
 import com.example.miams.http.types.SearchResponse
+import com.example.miams.http.types.SearchResult
 import kotlinx.coroutines.launch
 @Composable
 fun HomeScreen() {
+    val scope = rememberCoroutineScope()
     var searchText = remember { mutableStateOf("") }
+    var recipes = remember { mutableStateOf(listOf<SearchResult>()) }
+    var isLoading = remember { mutableStateOf(false) }
+
+    LaunchedEffect(searchText.value) {
+        isLoading.value = true
+        scope.launch {
+            try {
+                val searchResponse = RecipeRepository().getSearchResult(1, searchText.value)
+                recipes.value = searchResponse.results
+            } catch (e: Exception) {
+                Log.e("HomeScreen", "Error while getting search result for recipe", e)
+            } finally {
+                isLoading.value = false
+            }
+        }
+    }
 
     Column {
         SearchBar(searchText.value, onSearchTextChange = { newText -> searchText.value = newText })
 
-        // Replace this with your actual loading state
-        val isLoading = false
-
-        if (isLoading) {
+        if (isLoading.value) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
         } else {
-            // Replace this with your actual list of recipes
-            val recipes = listOf<Recipe>()
-
             LazyColumn {
-                items(recipes.size) { index ->
-                    RecipeCard(recipes[index]) {
+                items(recipes.value.size) { index ->
+                    RecipeCard(recipes.value[index]) {
                         // Handle recipe click
                     }
                 }
@@ -72,7 +85,7 @@ fun SearchBar(searchText: String, onSearchTextChange: (String) -> Unit) {
 }
 
 @Composable
-fun RecipeCard(recipe: Recipe, onClick: () -> Unit) {
+fun RecipeCard(recipe: SearchResult, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -81,7 +94,7 @@ fun RecipeCard(recipe: Recipe, onClick: () -> Unit) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Image(
-                painter = rememberImagePainter(recipe.imageUrl),
+                painter = rememberImagePainter(recipe.featured_image),
                 contentDescription = "Recipe Image",
                 modifier = Modifier.size(64.dp)
             )
@@ -89,10 +102,3 @@ fun RecipeCard(recipe: Recipe, onClick: () -> Unit) {
         }
     }
 }
-
-@Composable
-fun Card(modifier: Any, content: @Composable () -> Unit) {
-
-}
-
-data class Recipe(val title: String, val imageUrl: String)
