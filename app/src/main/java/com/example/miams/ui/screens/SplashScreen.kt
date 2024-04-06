@@ -88,10 +88,9 @@ fun SplashScreen(navController: NavHostController) {
 
                         onAddRecipes(result.title, result.featured_image)
 
-
                     }
-                    navController.navigate("home")
                 }
+                navController.navigate("home")
 
             } catch (e: Exception) {
                 Log.e("SearchScreen", "Error while getting search result for recipe", e)

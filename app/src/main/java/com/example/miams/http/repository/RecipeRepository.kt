@@ -13,13 +13,22 @@ class RecipeRepository {
         private const val API_URL = "https://food2fork.ca/api/recipe"
     }
 
-    suspend fun getSearchResult(page: Int, query: String): SearchResponse {
-        val response = client.get("$API_URL/search/?page=$page&query=$query"){
-            headers {
-                append("Authorization", "Token 9c8b06d329136da358c2d00e76946b0111ce2c48")
+    suspend fun getSearchResult(page: Int, query: String): SearchResponse? {
+        try {
+            val response = client.get("$API_URL/search/?page=$page&query=$query") {
+                headers {
+                    append("Authorization", "Token 9c8b06d329136da358c2d00e76946b0111ce2c48")
+                }
             }
+
+            if (response.status.value in 200..299) {
+                return response.body()
+            } else {
+                return null
+            }
+        } catch (e: Exception) {
+            return null
         }
-        return response.body()
     }
 
 }
