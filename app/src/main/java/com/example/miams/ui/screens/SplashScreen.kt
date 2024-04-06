@@ -29,7 +29,12 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+<<<<<<< HEAD
 import androidx.navigation.NavHostController
+=======
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+>>>>>>> 2d79174fbcf5903dd3003a5be72f4011ac70e304
 import com.example.miams.LocalDB.RecipesDatabase
 import com.example.miams.LocalDB.Tables.Recipes
 import com.example.miams.R
@@ -38,6 +43,7 @@ import com.example.miams.http.types.SearchResponse
 import com.example.miams.ui.theme.Emerald
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
@@ -46,7 +52,9 @@ import java.sql.Blob
 
 
 @Composable
+
 fun SplashScreen(navController: NavHostController) {
+
     val database = RecipesDatabase.getInstance(LocalContext.current.applicationContext)
     val RecipesDAO = database.RecipesDAO()
     val recipes = remember { mutableStateOf(listOf<Recipes>()) }
@@ -108,26 +116,22 @@ fun SplashScreen(navController: NavHostController) {
             .fillMaxSize()
             .background(Emerald),
         contentAlignment = Alignment.Center
-
-
     ) {
+
         Logo()
+
+        LaunchedEffect(key1 = Unit) {
+            delay(3000) // delay for 3 seconds
+            navController.navigate("home") {
+                popUpTo("splash") { inclusive = true }
+            }
+        }
     }
 }
-
-
 
 @Composable
 fun Logo(modifier: Modifier = Modifier) {
     val rotation = remember { Animatable(0f) }
-
-    LaunchedEffect(key1 = Unit) {
-        rotation.animateTo(360f,
-            animationSpec = infiniteRepeatable(
-                tween(durationMillis = 1000, easing = LinearEasing)
-            )
-        )
-    }
 
     Image(
         painter = painterResource(id = R.drawable.ic_miams_logo),

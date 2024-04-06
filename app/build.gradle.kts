@@ -81,6 +81,8 @@ dependencies {
 
     // Splash screen
     implementation("androidx.core:core-splashscreen:1.0.1")
+    implementation ("androidx.compose.material:material-icons-extended:1.0.5")
+    implementation ("androidx.compose.material:material:1.0.5")
 
     // Room
     implementation("androidx.room:room-runtime:2.6.1")
