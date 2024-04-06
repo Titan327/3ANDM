@@ -64,16 +64,7 @@ fun SplashScreen(navController: NavController) {
         contentAlignment = Alignment.Center
     ) {
 
-        Column {
-            Text(text = "test")
-            recipes.value.forEach{ recipe ->
-                Text(text = recipe.title)
-            }
-            Button(
-                onClick = { onAddRecipes() },
-                content = { Text("Cliquer ici") }
-            )
-        }
+
 
         Logo()
 
