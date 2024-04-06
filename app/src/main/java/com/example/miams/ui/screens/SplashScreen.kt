@@ -24,17 +24,20 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.miams.LocalDB.RecipesDatabase
 import com.example.miams.LocalDB.Tables.Recipes
 import com.example.miams.R
 import com.example.miams.ui.theme.Emerald
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 
 @Composable
-fun SplashScreen() {
+fun SplashScreen(navController: NavController) {
     val database = RecipesDatabase.getInstance(LocalContext.current.applicationContext)
     val RecipesDAO = database.RecipesDAO()
     val recipes = remember { mutableStateOf(listOf<Recipes>()) }
@@ -57,42 +60,35 @@ fun SplashScreen() {
     Box(
         modifier = Modifier
             .fillMaxSize(),
-            //.background(Emerald),
+        //.background(Emerald),
         contentAlignment = Alignment.Center
-
-
     ) {
 
         Column {
             Text(text = "test")
             recipes.value.forEach{ recipe ->
-
                 Text(text = recipe.title)
             }
             Button(
                 onClick = { onAddRecipes() },
                 content = { Text("Cliquer ici") }
             )
-            
         }
-        
-        //Logo()
+
+        Logo()
+
+        LaunchedEffect(key1 = Unit) {
+            delay(3000) // delay for 3 seconds
+            navController.navigate("home") {
+                popUpTo("splash") { inclusive = true }
+            }
+        }
     }
 }
-
-
 
 @Composable
 fun Logo(modifier: Modifier = Modifier) {
     val rotation = remember { Animatable(0f) }
-
-    LaunchedEffect(key1 = Unit) {
-        rotation.animateTo(360f,
-            animationSpec = infiniteRepeatable(
-                tween(durationMillis = 1000, easing = LinearEasing)
-            )
-        )
-    }
 
     Image(
         painter = painterResource(id = R.drawable.ic_miams_logo),

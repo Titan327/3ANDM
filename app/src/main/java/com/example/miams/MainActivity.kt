@@ -26,17 +26,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MiamsTheme(dynamicColor = false) {
-                // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    //color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
-                    val startDestination = "home"
+                    val startDestination = "splash"
                     NavHost(navController = navController, startDestination = startDestination) {
 
                         composable("splash") {
-                            SplashScreen()
+                            SplashScreen(navController)
                         }
                         composable("search") {
                             SearchScreen()
