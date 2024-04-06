@@ -7,8 +7,12 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -52,18 +56,27 @@ fun SplashScreen() {
 
     Box(
         modifier = Modifier
-            .fillMaxSize()
-            .background(Emerald),
+            .fillMaxSize(),
+            //.background(Emerald),
         contentAlignment = Alignment.Center
 
 
     ) {
-        
-        recipes.value.forEach{ recipe ->
-            Text(text = recipe.title)
+
+        Column {
+            Text(text = "test")
+            recipes.value.forEach{ recipe ->
+
+                Text(text = recipe.title)
+            }
+            Button(
+                onClick = { onAddRecipes() },
+                content = { Text("Cliquer ici") }
+            )
+            
         }
         
-        Logo()
+        //Logo()
     }
 }
 
