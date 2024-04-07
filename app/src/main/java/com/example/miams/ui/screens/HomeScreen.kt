@@ -2,7 +2,6 @@ package com.example.miams.ui.screens
 
 import android.annotation.SuppressLint
 import android.graphics.BitmapFactory
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,15 +14,9 @@ import androidx.compose.runtime.*
 import androidx.compose.material.MaterialTheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.semantics.Role.Companion.Image
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.rememberImagePainter
-import com.example.miams.http.repository.RecipeRepository
-import com.example.miams.http.types.SearchResponse
 import com.example.miams.http.types.SearchResult
 import kotlinx.coroutines.launch
 import androidx.compose.material.icons.Icons
@@ -35,10 +28,11 @@ import com.example.miams.LocalDB.Tables.Recipes
 import com.example.miams.Types.RecipesLists
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import androidx.navigation.NavController
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun HomeScreen() {
+fun HomeScreen(navController: NavController) {
     val scope = rememberCoroutineScope()
     var searchText = remember { mutableStateOf("") }
     var SearchRecipes = remember { mutableStateOf(listOf<SearchResult>()) }
@@ -69,7 +63,7 @@ fun HomeScreen() {
         floatingActionButton = {
             FloatingActionButton(onClick = {
                 scope.launch {
-                    scrollState.animateScrollToItem(0)
+                    scrollState.scrollToItem(0)
                 }
             }) {
                 Icon(Icons.Filled.ArrowUpward, contentDescription = "Scroll to top")
@@ -100,15 +94,15 @@ fun HomeScreen() {
                 CircularProgressIndicator()
             } else {
                 // Affichez la LazyColumn si isLoading est faux
-                LazyColumn {
+                LazyColumn(state = scrollState) {
                     items(convertedRecipes.size) { index ->
-                        RecipeCard(convertedRecipes[index])
+                        RecipeCard(convertedRecipes[index], navController)
                     }
                 }
             }
 
-
-
+            // Add the TestCard here
+            TestCard()
         }
     }
 }
@@ -116,6 +110,7 @@ fun HomeScreen() {
 fun DbRecipesToRecipesList(DbRecipes:List<Recipes>): List<RecipesLists>{
     val data = DbRecipes.map { DbRecipes ->
         RecipesLists(
+            id = DbRecipes.id,
             title = DbRecipes.title,
             image = DbRecipes.image
         )
@@ -142,14 +137,16 @@ fun SearchBar(searchText: String, onSearchTextChange: (String) -> Unit) {
 
 
 @Composable
-fun RecipeCard(recipe: RecipesLists) {
+fun RecipeCard(recipe: RecipesLists, navController: NavController) {
     val bitmap = BitmapFactory.decodeByteArray(recipe.image, 0, recipe.image!!.size)
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
-            //.clickable(onClick = onClick)
+            .clickable {
+                navController.navigate("recipeDetail/${recipe.id}")
+            }
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
 
