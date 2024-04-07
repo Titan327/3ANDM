@@ -28,9 +28,11 @@ import com.example.miams.http.types.SearchResult
 import kotlinx.coroutines.launch
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.ui.platform.LocalContext
 import com.example.miams.LocalDB.RecipesDatabase
 import com.example.miams.LocalDB.Tables.Recipes
+import com.example.miams.Types.RecipesLists
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 
@@ -46,28 +48,22 @@ fun HomeScreen() {
 
     val database = RecipesDatabase.getInstance(LocalContext.current.applicationContext)
     val RecipesDAO = database.RecipesDAO()
-    val recipes = remember { mutableStateOf(listOf<Recipes>()) }
+    val DbRecipes = remember { mutableStateOf(listOf<Recipes>()) }
 
-    /*
-    fun getAllRecipes() {
-        CoroutineScope(Dispatchers.Main).launch {
-            val recipesList = mutableListOf<Recipes>()
-            RecipesDAO.getAllRecipes().collect { recipes ->
-                recipesList.addAll(recipes)
-            }
-            recipes.value = recipesList
-        }
-    }
-     */
+    var convertedRecipes: List<RecipesLists> = emptyList()
 
     fun getAllRecipes() {
         CoroutineScope(Dispatchers.Main).launch {
+            isLoading.value = true
             val recipesList = RecipesDAO.getAllRecipes()
-            recipes.value = recipesList
+            DbRecipes.value = recipesList
+            convertedRecipes = DbRecipesToRecipesList(DbRecipes.value)
+            isLoading.value = false
         }
     }
 
     getAllRecipes()
+
 
     Scaffold(
         floatingActionButton = {
@@ -100,9 +96,14 @@ fun HomeScreen() {
             }
 
 
-            LazyColumn {
-                items(recipes.value.size) { index ->
-                    RecipeCard(recipes.value[index])
+            if (isLoading.value) {
+                CircularProgressIndicator()
+            } else {
+                // Affichez la LazyColumn si isLoading est faux
+                LazyColumn {
+                    items(convertedRecipes.size) { index ->
+                        RecipeCard(convertedRecipes[index])
+                    }
                 }
             }
 
@@ -112,6 +113,16 @@ fun HomeScreen() {
     }
 }
 
+fun DbRecipesToRecipesList(DbRecipes:List<Recipes>): List<RecipesLists>{
+    val data = DbRecipes.map { DbRecipes ->
+        RecipesLists(
+            title = DbRecipes.title,
+            image = DbRecipes.image
+        )
+    }
+    return data
+}
+
 
 @Composable
 fun SearchBar(searchText: String, onSearchTextChange: (String) -> Unit) {
@@ -119,15 +130,20 @@ fun SearchBar(searchText: String, onSearchTextChange: (String) -> Unit) {
         value = searchText,
         onValueChange = onSearchTextChange,
         label = { Text("Search") },
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        trailingIcon = {
+            IconButton(onClick = {  }) {
+                Icon(Icons.Filled.Search, contentDescription = "Rechercher")
+            }
+        },
     )
 }
 
 
 
 @Composable
-fun RecipeCard(recipe: Recipes) {
-    val bitmap = BitmapFactory.decodeByteArray(recipe.image, 0, recipe.image.size)
+fun RecipeCard(recipe: RecipesLists) {
+    val bitmap = BitmapFactory.decodeByteArray(recipe.image, 0, recipe.image!!.size)
 
     Card(
         modifier = Modifier
