@@ -58,7 +58,6 @@ fun HomeScreen(navController: NavController) {
 
     getAllRecipes()
 
-
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(onClick = {
@@ -85,10 +84,11 @@ fun HomeScreen(navController: NavController) {
                             modifier = Modifier.padding(8.dp)
                         )
                     }
-                    //Spacer(modifier = Modifier.width(8.dp))
                 }
             }
 
+            // Affichez le compteur ici
+            Text(text = "Nombre d'éléments trouvés: ${convertedRecipes.size}")
 
             if (isLoading.value) {
                 CircularProgressIndicator()
