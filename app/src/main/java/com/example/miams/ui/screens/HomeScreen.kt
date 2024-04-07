@@ -4,12 +4,14 @@ import android.annotation.SuppressLint
 import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.material.MaterialTheme
@@ -29,19 +31,29 @@ import kotlinx.coroutines.launch
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.ImeAction
 import com.example.miams.LocalDB.RecipesDatabase
 import com.example.miams.LocalDB.Tables.Recipes
+import com.example.miams.R
 import com.example.miams.Types.RecipesLists
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
+
+var convertedRecipes by mutableStateOf<List<RecipesLists>>(emptyList())
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun HomeScreen() {
     val scope = rememberCoroutineScope()
     var searchText = remember { mutableStateOf("") }
-    var SearchRecipes = remember { mutableStateOf(listOf<SearchResult>()) }
+    var SearchResponse = remember { mutableStateOf(SearchResponse) }
     var isLoading = remember { mutableStateOf(false) }
     val categories = listOf("Beef", "Chicken", "Dessert")
     val scrollState = rememberLazyListState()
@@ -50,7 +62,8 @@ fun HomeScreen() {
     val RecipesDAO = database.RecipesDAO()
     val DbRecipes = remember { mutableStateOf(listOf<Recipes>()) }
 
-    var convertedRecipes: List<RecipesLists> = emptyList()
+    //var convertedRecipes: List<RecipesLists> = emptyList()
+    //var convertedRecipes by remember { mutableStateOf<List<RecipesLists>>(emptyList()) }
 
     fun getAllRecipes() {
         CoroutineScope(Dispatchers.Main).launch {
@@ -61,9 +74,14 @@ fun HomeScreen() {
             isLoading.value = false
         }
     }
+    LaunchedEffect(Unit) {
+        getAllRecipes()
+    }
 
-    getAllRecipes()
 
+    fun test(){
+        convertedRecipes = emptyList()
+    }
 
     Scaffold(
         floatingActionButton = {
@@ -77,12 +95,14 @@ fun HomeScreen() {
         }
     ) {
         Column {
-            SearchBar(searchText.value, onSearchTextChange = { newText -> searchText.value = newText })
+            //SearchBar(searchText.value, onSearchTextChange = { searchText.value = it })
+            SearchBar()
+
 
             LazyRow {
                 items(categories) { category ->
                     Button(
-                        onClick = { /* Handle click */ },
+                        onClick = { test() },
                         modifier = Modifier
                             .padding(5.dp)
                     ) {
@@ -95,19 +115,19 @@ fun HomeScreen() {
                 }
             }
 
-
             if (isLoading.value) {
                 CircularProgressIndicator()
             } else {
-                // Affichez la LazyColumn si isLoading est faux
-                LazyColumn {
-                    items(convertedRecipes.size) { index ->
-                        RecipeCard(convertedRecipes[index])
+                if (convertedRecipes.isNotEmpty()) {
+                    LazyColumn {
+                        items(convertedRecipes.size) { index ->
+                            RecipeCard(convertedRecipes[index])
+                        }
                     }
+                } else {
+                    Text("No recipes found.")
                 }
             }
-
-
 
         }
     }
@@ -123,27 +143,54 @@ fun DbRecipesToRecipesList(DbRecipes:List<Recipes>): List<RecipesLists>{
     return data
 }
 
-
-@Composable
-fun SearchBar(searchText: String, onSearchTextChange: (String) -> Unit) {
-    TextField(
-        value = searchText,
-        onValueChange = onSearchTextChange,
-        label = { Text("Search") },
-        modifier = Modifier.fillMaxWidth(),
-        trailingIcon = {
-            IconButton(onClick = {  }) {
-                Icon(Icons.Filled.Search, contentDescription = "Rechercher")
-            }
-        },
-    )
+fun SearchResponseToRecipesList(SearchResponse:SearchResponse): List<RecipesLists>{
+    val data = SearchResponse.results.map { SearchResponse ->
+        RecipesLists(
+            title = SearchResponse.title,
+            featured_image = SearchResponse.featured_image
+        )
+    }
+    return data
 }
 
 
 
 @Composable
+fun SearchBar() {
+    val scope = rememberCoroutineScope() // Create a CoroutineScope
+    var text by remember { mutableStateOf("Hello") }
+    val search = remember { mutableStateOf<SearchResponse?>(null) }
+
+    TextField(
+        value = text,
+        onValueChange = { text = it },
+        modifier = Modifier.fillMaxWidth(),
+        label = { Text("Search") },
+        keyboardOptions = KeyboardOptions.Default.copy(
+            imeAction = ImeAction.Search
+        ),
+        keyboardActions = KeyboardActions(
+            onSearch = {
+                scope.launch {
+                    try {
+                        search.value = RecipeRepository().getSearchResult(1, text)
+                        if (search.value != null) {
+                            val data = SearchResponseToRecipesList(search.value!!)
+                            convertedRecipes = data
+                            Log.d("SearchScreen", data.toString())
+                        }
+                    } catch (e: Exception) {
+                        Log.e("SearchScreen", "Error while getting search result for recipe", e)
+                    }
+                }
+            }
+        )
+    )
+}
+
+
+@Composable
 fun RecipeCard(recipe: RecipesLists) {
-    val bitmap = BitmapFactory.decodeByteArray(recipe.image, 0, recipe.image!!.size)
 
     Card(
         modifier = Modifier
@@ -153,14 +200,27 @@ fun RecipeCard(recipe: RecipesLists) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
 
-            Image(
-                painter = rememberImagePainter(bitmap),
-                contentDescription = "Recipe Image",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .height(75.dp)
-                    .width(75.dp)
-            )
+            if (recipe.image != null){
+                val bitmap = BitmapFactory.decodeByteArray(recipe.image, 0, recipe.image!!.size)
+                Image(
+                    painter = rememberImagePainter(bitmap),
+                    contentDescription = "Recipe Image",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .height(75.dp)
+                        .width(75.dp)
+                )
+            }else{
+                Image(
+                    painter = rememberImagePainter(data = recipe.featured_image),
+                    contentDescription = "Recipe Image",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .height(75.dp)
+                        .width(75.dp)
+                )
+            }
+
             Text(recipe.title, Modifier.padding(start = 8.dp))
         }
     }
