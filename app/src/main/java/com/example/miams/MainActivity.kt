@@ -63,7 +63,7 @@ class MainActivity : ComponentActivity() {
                             }
 
                             if (recipe != null) {
-                                RecipeDetailScreen(recipe!!)
+                                RecipeDetailScreen(recipe!!, navController)
                             }
 
                     }
