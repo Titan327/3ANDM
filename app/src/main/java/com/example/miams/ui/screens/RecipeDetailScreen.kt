@@ -69,7 +69,7 @@ fun RecipeDetailScreen(navController: NavController,pk: Int) {
 
     val isLoading = remember { mutableStateOf(true) }
 
-
+    Log.d("DetailRecipe", pk.toString())
     LaunchedEffect(Unit) {
         suspend fun getRecipeDetails() {
             isLoading.value = true

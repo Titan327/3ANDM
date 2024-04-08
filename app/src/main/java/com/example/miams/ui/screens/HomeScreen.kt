@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,35 +16,25 @@ import androidx.compose.runtime.*
 import androidx.compose.material.MaterialTheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.semantics.Role.Companion.Image
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.rememberImagePainter
 import com.example.miams.http.repository.RecipeRepository
 import com.example.miams.http.types.SearchResponse
-import com.example.miams.http.types.SearchResult
 import kotlinx.coroutines.launch
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.navigation.NavController
 import com.example.miams.LocalDB.RecipesDatabase
 import com.example.miams.LocalDB.Tables.Recipes
-import com.example.miams.R
 import com.example.miams.Types.RecipesLists
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.net.URL
 
 
 var convertedRecipes by mutableStateOf<List<RecipesLists>>(emptyList())
@@ -64,6 +53,8 @@ fun HomeScreen(navController: NavController) {
     val RecipesDAO = database.RecipesDAO()
     val DbRecipes = remember { mutableStateOf(listOf<Recipes>()) }
 
+    val search = remember { mutableStateOf<SearchResponse?>(null) }
+
     //var convertedRecipes: List<RecipesLists> = emptyList()
     //var convertedRecipes by remember { mutableStateOf<List<RecipesLists>>(emptyList()) }
 
@@ -81,8 +72,23 @@ fun HomeScreen(navController: NavController) {
     }
 
 
-    fun test(){
-        convertedRecipes = emptyList()
+    fun urlToByteArray(url: String): ByteArray {
+        val inputStream = URL(url).openStream()
+        val bytes = inputStream.readBytes()
+        inputStream.close()
+        return bytes
+    }
+
+    suspend fun onAddRecipes(id: Int,title: String, url: String, ingredients: List<String>) {
+        withContext(Dispatchers.IO) {
+            val ingredientsString = Gson().toJson(ingredients)
+            RecipesDAO.upsertRecipes(Recipes(
+                id = id,
+                title = title,
+                image = urlToByteArray(url),
+                ingredients = ingredientsString
+            ))
+        }
     }
 
     Scaffold(
@@ -104,7 +110,29 @@ fun HomeScreen(navController: NavController) {
             LazyRow {
                 items(categories) { category ->
                     Button(
-                        onClick = { test() },
+
+                        onClick = {
+                            scope.launch {
+                                try {
+                                    search.value = RecipeRepository().getSearchResult(1, category)
+                                    if (search.value != null) {
+                                        search.value!!.results.forEach{ result ->
+                                            onAddRecipes(
+                                                result.pk,
+                                                result.title,
+                                                result.featured_image,
+                                                result.ingredients
+                                            )
+                                        }
+                                        val data = SearchResponseToRecipesList(search.value!!)
+                                        convertedRecipes = data
+                                        Log.d("SearchScreen", data.toString())
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("SearchScreen", "Error while getting search result for recipe", e)
+                                }
+                            }
+                        },
                         modifier = Modifier
                             .padding(5.dp)
                     ) {
@@ -167,6 +195,28 @@ fun SearchBar() {
     var text by remember { mutableStateOf("Search...") }
     val search = remember { mutableStateOf<SearchResponse?>(null) }
 
+    val database = RecipesDatabase.getInstance(LocalContext.current.applicationContext)
+    val RecipesDAO = database.RecipesDAO()
+
+    fun urlToByteArray(url: String): ByteArray {
+        val inputStream = URL(url).openStream()
+        val bytes = inputStream.readBytes()
+        inputStream.close()
+        return bytes
+    }
+
+    suspend fun onAddRecipes(id: Int,title: String, url: String, ingredients: List<String>) {
+        withContext(Dispatchers.IO) {
+            val ingredientsString = Gson().toJson(ingredients)
+            RecipesDAO.upsertRecipes(Recipes(
+                id = id,
+                title = title,
+                image = urlToByteArray(url),
+                ingredients = ingredientsString
+            ))
+        }
+    }
+
     TextField(
         value = text,
         onValueChange = { text = it },
@@ -182,6 +232,14 @@ fun SearchBar() {
                         search.value = RecipeRepository().getSearchResult(1, text)
                         if (search.value != null) {
                             val data = SearchResponseToRecipesList(search.value!!)
+                            search.value!!.results.forEach{ result ->
+                                onAddRecipes(
+                                    result.pk,
+                                    result.title,
+                                    result.featured_image,
+                                    result.ingredients
+                                )
+                            }
                             convertedRecipes = data
                             Log.d("SearchScreen", data.toString())
                         }
@@ -200,7 +258,7 @@ fun RecipeCard(recipe: RecipesLists,navController: NavController) {
 
     val id = recipe.pk
 
-    //Log.d("DetailRecipe", recipe.pk.toString())
+    Log.d("DetailRecipe", recipe.pk.toString())
 
     Card(
         modifier = Modifier

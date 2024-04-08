@@ -93,7 +93,7 @@ fun SplashScreen(navController: NavHostController) {
 
                     search.value!!.results.forEach{ result ->
                         onAddRecipes(
-                            result.pk+1,
+                            result.pk,
                             result.title,
                             result.featured_image,
                             result.ingredients
