@@ -23,4 +23,8 @@ interface RecipesDAO {
     @Query(value = "DELETE FROM Recipes")
     suspend fun deleteAllRecipes()
 
+    @Query("SELECT * FROM Recipes WHERE id = :id")
+    suspend fun getRecipeById(id: Int): Recipes
+
+
 }

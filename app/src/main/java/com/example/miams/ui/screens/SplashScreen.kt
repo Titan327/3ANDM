@@ -36,6 +36,7 @@ import com.example.miams.R
 import com.example.miams.http.repository.RecipeRepository
 import com.example.miams.http.types.SearchResponse
 import com.example.miams.ui.theme.Emerald
+import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -64,9 +65,15 @@ fun SplashScreen(navController: NavHostController) {
         return bytes
     }
 
-    suspend fun onAddRecipes(title: String, url: String) {
+    suspend fun onAddRecipes(id: Int,title: String, url: String, ingredients: List<String>) {
         withContext(Dispatchers.IO) {
-            RecipesDAO.upsertRecipes(Recipes(title = title, image = urlToByteArray(url)))
+            val ingredientsString = Gson().toJson(ingredients)
+            RecipesDAO.upsertRecipes(Recipes(
+                id = id,
+                title = title,
+                image = urlToByteArray(url),
+                ingredients = ingredientsString
+            ))
         }
     }
 
@@ -85,8 +92,12 @@ fun SplashScreen(navController: NavHostController) {
                     deleteAllRecipes()
 
                     search.value!!.results.forEach{ result ->
-
-                        onAddRecipes(result.title, result.featured_image)
+                        onAddRecipes(
+                            result.pk+1,
+                            result.title,
+                            result.featured_image,
+                            result.ingredients
+                        )
 
                     }
                 }

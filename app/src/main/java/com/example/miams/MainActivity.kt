@@ -18,7 +18,7 @@ import com.example.miams.ui.screens.SearchScreen
 import com.example.miams.ui.screens.SplashScreen
 import com.example.miams.ui.theme.MiamsTheme
 import com.example.miams.ui.screens.HomeScreen
-
+import com.example.miams.ui.screens.RecipeDetailScreen
 
 
 class MainActivity : ComponentActivity() {
@@ -40,7 +40,10 @@ class MainActivity : ComponentActivity() {
                             SearchScreen()
                         }
                         composable ("home"){
-                            HomeScreen()
+                            HomeScreen(navController)
+                        }
+                        composable ("detail/{id}"){navBackStackEntry ->
+                            RecipeDetailScreen(navController,(navBackStackEntry.arguments?.getString("id") ?: "").toInt())
                         }
 
                     }

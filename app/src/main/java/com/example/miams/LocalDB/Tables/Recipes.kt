@@ -6,7 +6,8 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "Recipes")
 data class Recipes(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val title: String,
-    @ColumnInfo(typeAffinity = ColumnInfo.BLOB) val image: ByteArray,
+    @PrimaryKey(autoGenerate = false) val id: Int = 0,
+    val title: String = "",
+    @ColumnInfo(typeAffinity = ColumnInfo.BLOB) val image: ByteArray? = null,
+    @ColumnInfo(defaultValue = "[]") val ingredients: String = "",
 )

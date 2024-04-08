@@ -90,5 +90,7 @@ dependencies {
     annotationProcessor("androidx.room:room-compiler:2.6.1")
     kapt("androidx.room:room-compiler:2.6.1")
 
+    // Gson
+    implementation("com.google.code.gson:gson:2.9.0")
 
 }

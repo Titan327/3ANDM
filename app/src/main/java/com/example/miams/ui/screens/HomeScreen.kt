@@ -37,10 +37,12 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.navigation.NavController
 import com.example.miams.LocalDB.RecipesDatabase
 import com.example.miams.LocalDB.Tables.Recipes
 import com.example.miams.R
 import com.example.miams.Types.RecipesLists
+import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -50,7 +52,7 @@ var convertedRecipes by mutableStateOf<List<RecipesLists>>(emptyList())
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun HomeScreen() {
+fun HomeScreen(navController: NavController) {
     val scope = rememberCoroutineScope()
     var searchText = remember { mutableStateOf("") }
     var SearchResponse = remember { mutableStateOf(SearchResponse) }
@@ -121,7 +123,7 @@ fun HomeScreen() {
                 if (convertedRecipes.isNotEmpty()) {
                     LazyColumn {
                         items(convertedRecipes.size) { index ->
-                            RecipeCard(convertedRecipes[index])
+                            RecipeCard(convertedRecipes[index],navController)
                         }
                     }
                 } else {
@@ -136,8 +138,10 @@ fun HomeScreen() {
 fun DbRecipesToRecipesList(DbRecipes:List<Recipes>): List<RecipesLists>{
     val data = DbRecipes.map { DbRecipes ->
         RecipesLists(
+            pk = DbRecipes.id,
             title = DbRecipes.title,
-            image = DbRecipes.image
+            image = DbRecipes.image,
+            ingredients = Gson().fromJson(DbRecipes.ingredients, Array<String>::class.java).toList()
         )
     }
     return data
@@ -146,8 +150,10 @@ fun DbRecipesToRecipesList(DbRecipes:List<Recipes>): List<RecipesLists>{
 fun SearchResponseToRecipesList(SearchResponse:SearchResponse): List<RecipesLists>{
     val data = SearchResponse.results.map { SearchResponse ->
         RecipesLists(
+            pk = SearchResponse.pk,
             title = SearchResponse.title,
-            featured_image = SearchResponse.featured_image
+            featured_image = SearchResponse.featured_image,
+            ingredients = SearchResponse.ingredients
         )
     }
     return data
@@ -158,14 +164,14 @@ fun SearchResponseToRecipesList(SearchResponse:SearchResponse): List<RecipesList
 @Composable
 fun SearchBar() {
     val scope = rememberCoroutineScope() // Create a CoroutineScope
-    var text by remember { mutableStateOf("Hello") }
+    var text by remember { mutableStateOf("Search...") }
     val search = remember { mutableStateOf<SearchResponse?>(null) }
 
     TextField(
         value = text,
         onValueChange = { text = it },
         modifier = Modifier.fillMaxWidth(),
-        label = { Text("Search") },
+        //label = { Text("Search") },
         keyboardOptions = KeyboardOptions.Default.copy(
             imeAction = ImeAction.Search
         ),
@@ -190,13 +196,17 @@ fun SearchBar() {
 
 
 @Composable
-fun RecipeCard(recipe: RecipesLists) {
+fun RecipeCard(recipe: RecipesLists,navController: NavController) {
+
+    val id = recipe.pk
+
+    //Log.d("DetailRecipe", recipe.pk.toString())
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
-            //.clickable(onClick = onClick)
+            .clickable(onClick = {navController.navigate("detail/$id")})
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
 
