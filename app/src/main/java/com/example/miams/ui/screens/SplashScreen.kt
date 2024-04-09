@@ -89,6 +89,7 @@ fun SplashScreen(navController: NavHostController) {
         scope.launch {
             try {
                 search.value = RecipeRepository().getSearchResult(1, "")
+                Log.d("SearchScreen", search.value.toString())
                 if (search.value != null) {
                     //deleteAllRecipes()
 
@@ -101,8 +102,14 @@ fun SplashScreen(navController: NavHostController) {
                         )
 
                     }
+                    val state = 1
+                    navController.navigate("home/$state")
+                }else{
+                    val state = 0
+                    Log.d("SearchScreen", "ici")
+                    navController.navigate("home/$state")
                 }
-                navController.navigate("home")
+
 
             } catch (e: Exception) {
                 Log.e("SearchScreen", "Error while getting search result for recipe", e)

@@ -24,6 +24,7 @@ import com.example.miams.http.types.SearchResponse
 import kotlinx.coroutines.launch
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.ui.modifier.modifierLocalMapOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
@@ -45,7 +46,8 @@ val isLoading = MutableStateFlow(false)
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun HomeScreen(navController: NavController) {
+fun HomeScreen(navController: NavController, online: String) {
+
     val scope = rememberCoroutineScope()
     var searchText = remember { mutableStateOf("") }
     var SearchResponse = remember { mutableStateOf(SearchResponse) }
@@ -104,14 +106,41 @@ fun HomeScreen(navController: NavController) {
     Scaffold(
 
         floatingActionButton = {
-            FloatingActionButton(onClick = {
-                scope.launch {
-                    scrollState.animateScrollToItem(0)
+
+            Column {
+                FloatingActionButton(
+                    onClick = {
+                        scope.launch {
+                            scrollState.animateScrollToItem(0)
+                        }
+                    }
+
+                ) {
+                    Icon(Icons.Filled.ArrowUpward, contentDescription = "Scroll to top")
                 }
-            }) {
-                Icon(Icons.Filled.ArrowUpward, contentDescription = "Scroll to top")
+
+                Log.d("SearchScreen", online.toString())
+
+                if(online == "0"){
+                    FloatingActionButton(
+                        onClick = {
+                            scope.launch {
+                                navController.navigate("splash")
+                            }
+                        },
+                        modifier = Modifier
+                            .padding(top = 5.dp)
+
+                    ) {
+                        Text(text = "Reconnect")
+                    }
+                }
+
+                
             }
+
         }
+
 
     ) {
         Column {
