@@ -43,10 +43,13 @@ import java.net.URL
 var convertedRecipes by mutableStateOf<List<RecipesLists>>(emptyList())
 var nextUrl = "https://food2fork.ca/api/recipe/search/?page=2&query="
 val isLoading = MutableStateFlow(false)
+var onlineglob = ""
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun HomeScreen(navController: NavController, online: String) {
+
+    onlineglob = online
 
     val scope = rememberCoroutineScope()
     var searchText = remember { mutableStateOf("") }
@@ -54,7 +57,7 @@ fun HomeScreen(navController: NavController, online: String) {
     //var isLoading = remember { mutableStateOf(false) }
     val isLoading by isLoading.collectAsState()
     var newLoad = remember { mutableStateOf(false) }
-    val categories = listOf("Beef", "Chicken", "Dessert")
+    val categories = listOf("Beef", "Chicken", "Vegetarian", "Tacos")
     val scrollState = rememberLazyListState()
 
 
@@ -80,6 +83,14 @@ fun HomeScreen(navController: NavController, online: String) {
     }
     LaunchedEffect(Unit) {
         getAllRecipes()
+    }
+
+    fun getRecipesByTitle(title: String) {
+        CoroutineScope(Dispatchers.Main).launch {
+            val recipesList = RecipesDAO.getRecipes(title)
+            DbRecipes.value = recipesList
+            convertedRecipes = DbRecipesToRecipesList(DbRecipes.value)
+        }
     }
 
 
@@ -156,21 +167,32 @@ fun HomeScreen(navController: NavController, online: String) {
                             changeStateLoading(true)
                             scope.launch {
                                 try {
-                                    search.value = RecipeRepository().getSearchResult(1, category)
-                                    if (search.value != null) {
-                                        nextUrl = search.value!!.next.toString()
-                                        search.value!!.results.forEach{ result ->
-                                            onAddRecipes(
-                                                result.pk,
-                                                result.title,
-                                                result.featured_image,
-                                                result.ingredients
-                                            )
+                                    if (online == "1"){
+                                        search.value = RecipeRepository().getSearchResult(1, category)
+                                        if (search.value != null) {
+                                            nextUrl = search.value!!.next.toString()
+                                            search.value!!.results.forEach { result ->
+                                                onAddRecipes(
+                                                    result.pk,
+                                                    result.title,
+                                                    result.featured_image,
+                                                    result.ingredients
+                                                )
+                                            }
+                                            val data = SearchResponseToRecipesList(search.value!!)
+                                            convertedRecipes = data
+                                            changeStateLoading(false)
                                         }
-                                        val data = SearchResponseToRecipesList(search.value!!)
+                                    }else{
+
+                                        getRecipesByTitle(category)
+                                        val data = DbRecipesToRecipesList(DbRecipes.value)
                                         convertedRecipes = data
                                         changeStateLoading(false)
+
                                     }
+
+
                                 } catch (e: Exception) {
                                     Log.e("SearchScreen", "Error while getting search result for recipe", e)
                                 }
@@ -207,15 +229,19 @@ fun HomeScreen(navController: NavController, online: String) {
                             RecipeCard(convertedRecipes[index],navController)
                             if (index == (convertedRecipes.size-5)){
 
+
                                 newLoad.value = false
+
 
                                 this@LazyColumn.item {
 
-                                    Row(
-                                        modifier = Modifier.fillMaxSize(),
-                                        horizontalArrangement = Arrangement.Center
-                                    ) {
-                                        CircularProgressIndicator()
+                                    if(online == "1") {
+                                        Row(
+                                            modifier = Modifier.fillMaxSize(),
+                                            horizontalArrangement = Arrangement.Center
+                                        ) {
+                                            CircularProgressIndicator()
+                                        }
                                     }
 
                                 }
@@ -225,20 +251,36 @@ fun HomeScreen(navController: NavController, online: String) {
                                         Log.d("SearchScreen", nextUrl.toString())
                                         search.value = RecipeRepository().getSearchResultByUrl(nextUrl)
                                         Log.d("SearchScreen", search.value.toString())
-                                        if (search.value != null) {
-                                            nextUrl = search.value!!.next.toString()
-                                            search.value!!.results.forEach{ result ->
-                                                onAddRecipes(
-                                                    result.pk,
-                                                    result.title,
-                                                    result.featured_image,
-                                                    result.ingredients
-                                                )
+
+                                        if(online == "1"){
+                                            if (search.value != null) {
+                                                nextUrl = search.value!!.next.toString()
+                                                search.value!!.results.forEach{ result ->
+                                                    onAddRecipes(
+                                                        result.pk,
+                                                        result.title,
+                                                        result.featured_image,
+                                                        result.ingredients
+                                                    )
+                                                }
+                                                val data = SearchResponseToRecipesList(search.value!!)
+                                                convertedRecipes = convertedRecipes + data
+                                                Log.d("SearchScreen", convertedRecipes.toString())
                                             }
-                                            val data = SearchResponseToRecipesList(search.value!!)
-                                            convertedRecipes = convertedRecipes + data
-                                            Log.d("SearchScreen", convertedRecipes.toString())
+                                        }/*
+                                        else{
+
+
+                                            getRecipesByTitle("")
+                                            val data = DbRecipesToRecipesList(DbRecipes.value)
+                                            convertedRecipes = data
+                                            changeStateLoading(false)
+
+
                                         }
+                                        */
+
+
                                     } catch (e: Exception) {
                                         Log.e("SearchScreen", "Error while getting search result for recipe", e)
                                     }
@@ -301,6 +343,8 @@ fun SearchBar() {
     val database = RecipesDatabase.getInstance(LocalContext.current.applicationContext)
     val RecipesDAO = database.RecipesDAO()
 
+    val DbRecipes = remember { mutableStateOf(listOf<Recipes>()) }
+
     fun urlToByteArray(url: String): ByteArray {
         val inputStream = URL(url).openStream()
         val bytes = inputStream.readBytes()
@@ -321,6 +365,14 @@ fun SearchBar() {
         }
     }
 
+    fun getRecipesByTitle(title: String) {
+        CoroutineScope(Dispatchers.Main).launch {
+            val recipesList = RecipesDAO.getRecipes(title)
+            DbRecipes.value = recipesList
+            convertedRecipes = DbRecipesToRecipesList(DbRecipes.value)
+        }
+    }
+
     TextField(
         value = text,
         onValueChange = { text = it },
@@ -336,21 +388,31 @@ fun SearchBar() {
                 focusManager.clearFocus()
                 scope.launch {
                     try {
-                        search.value = RecipeRepository().getSearchResult(1, text)
-                        if (search.value != null) {
-                            val data = SearchResponseToRecipesList(search.value!!)
-                            search.value!!.results.forEach{ result ->
-                                onAddRecipes(
-                                    result.pk,
-                                    result.title,
-                                    result.featured_image,
-                                    result.ingredients
-                                )
+
+                        if(onlineglob == "1"){
+                            search.value = RecipeRepository().getSearchResult(1, text)
+                            if (search.value != null) {
+                                val data = SearchResponseToRecipesList(search.value!!)
+                                search.value!!.results.forEach{ result ->
+                                    onAddRecipes(
+                                        result.pk,
+                                        result.title,
+                                        result.featured_image,
+                                        result.ingredients
+                                    )
+                                }
+                                convertedRecipes = data
+                                changeStateLoading(false)
+                                Log.d("SearchScreen", data.toString())
                             }
+                        }else{
+                            getRecipesByTitle(text)
+                            val data = DbRecipesToRecipesList(DbRecipes.value)
                             convertedRecipes = data
                             changeStateLoading(false)
-                            Log.d("SearchScreen", data.toString())
                         }
+
+
                     } catch (e: Exception) {
                         Log.e("SearchScreen", "Error while getting search result for recipe", e)
                     }

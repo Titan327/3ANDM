@@ -20,6 +20,9 @@ interface RecipesDAO {
     @Query(value = "SELECT * FROM Recipes")
     suspend fun getAllRecipes(): List<Recipes>
 
+    @Query(value = "SELECT * FROM Recipes WHERE title LIKE '%' || :title || '%'")
+    suspend fun getRecipes(title: String): List<Recipes>
+
     @Query(value = "DELETE FROM Recipes")
     suspend fun deleteAllRecipes()
 

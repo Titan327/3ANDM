@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import com.example.miams.LocalDB.Tables.RecipesDAO
 import com.example.miams.LocalDB.Tables.Recipes
 
-@Database(entities = [Recipes::class], version = 1)
+@Database(entities = [Recipes::class], version = 2)
 abstract class RecipesDatabase: RoomDatabase() {
     abstract fun RecipesDAO(): RecipesDAO
 
