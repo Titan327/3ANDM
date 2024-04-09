@@ -94,7 +94,8 @@ fun HomeScreen(navController: NavController) {
             RecipesDAO.upsertRecipes(Recipes(
                 id = id,
                 title = title,
-                image = urlToByteArray(url),
+                //image = urlToByteArray(url),
+                featured_image = url,
                 ingredients = ingredientsString
             ))
         }
@@ -239,7 +240,8 @@ fun DbRecipesToRecipesList(DbRecipes:List<Recipes>): List<RecipesLists>{
         RecipesLists(
             pk = DbRecipes.id,
             title = DbRecipes.title,
-            image = DbRecipes.image,
+            //image = DbRecipes.image,
+            featured_image = DbRecipes.featured_image,
             ingredients = Gson().fromJson(DbRecipes.ingredients, Array<String>::class.java).toList()
         )
     }
@@ -283,7 +285,8 @@ fun SearchBar() {
             RecipesDAO.upsertRecipes(Recipes(
                 id = id,
                 title = title,
-                image = urlToByteArray(url),
+                //image = urlToByteArray(url),
+                featured_image = url,
                 ingredients = ingredientsString
             ))
         }

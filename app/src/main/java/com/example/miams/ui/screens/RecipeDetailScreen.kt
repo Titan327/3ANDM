@@ -111,9 +111,10 @@ fun RecipeDetailScreen(navController: NavController,pk: Int) {
             Log.d("DetailRecipe", DbRecipes.value.toString())
 
             Column(modifier = Modifier.padding(8.dp)) {
-                val bitmap = BitmapFactory.decodeByteArray(DbRecipes.value.image, 0, DbRecipes.value.image!!.size)
+                //val bitmap = BitmapFactory.decodeByteArray(DbRecipes.value.image, 0, DbRecipes.value.image!!.size)
                 Image(
-                    painter = rememberImagePainter(bitmap),
+                    //painter = rememberImagePainter(bitmap),
+                    painter = rememberImagePainter(DbRecipes.value.featured_image),
                     contentDescription = "Recipe Image",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier

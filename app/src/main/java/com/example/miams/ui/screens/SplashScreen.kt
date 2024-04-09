@@ -71,7 +71,8 @@ fun SplashScreen(navController: NavHostController) {
             RecipesDAO.upsertRecipes(Recipes(
                 id = id,
                 title = title,
-                image = urlToByteArray(url),
+                //image = urlToByteArray(url),
+                featured_image = url,
                 ingredients = ingredientsString
             ))
         }
@@ -89,7 +90,7 @@ fun SplashScreen(navController: NavHostController) {
             try {
                 search.value = RecipeRepository().getSearchResult(1, "")
                 if (search.value != null) {
-                    deleteAllRecipes()
+                    //deleteAllRecipes()
 
                     search.value!!.results.forEach{ result ->
                         onAddRecipes(

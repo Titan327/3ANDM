@@ -8,6 +8,7 @@ import androidx.room.PrimaryKey
 data class Recipes(
     @PrimaryKey(autoGenerate = false) val id: Int = 0,
     val title: String = "",
+    val featured_image: String = "",
     @ColumnInfo(typeAffinity = ColumnInfo.BLOB) val image: ByteArray? = null,
     @ColumnInfo(defaultValue = "[]") val ingredients: String = "",
 )
