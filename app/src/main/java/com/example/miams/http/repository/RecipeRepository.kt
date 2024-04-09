@@ -31,4 +31,23 @@ class RecipeRepository {
         }
     }
 
+    suspend fun getSearchResultByUrl(url: String): SearchResponse? {
+        try {
+            val response = client.get(url) {
+                headers {
+                    append("Authorization", "Token 9c8b06d329136da358c2d00e76946b0111ce2c48")
+                }
+            }
+
+
+            if (response.status.value in 200..299) {
+                return response.body()
+            } else {
+                return null
+            }
+        } catch (e: Exception) {
+            return null
+        }
+    }
+
 }

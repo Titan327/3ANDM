@@ -38,6 +38,7 @@ import java.net.URL
 
 
 var convertedRecipes by mutableStateOf<List<RecipesLists>>(emptyList())
+var nextUrl = "https://food2fork.ca/api/recipe/search/?page=2&query="
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -54,6 +55,8 @@ fun HomeScreen(navController: NavController) {
     val DbRecipes = remember { mutableStateOf(listOf<Recipes>()) }
 
     val search = remember { mutableStateOf<SearchResponse?>(null) }
+
+    val coroutineScope = rememberCoroutineScope()
 
     //var convertedRecipes: List<RecipesLists> = emptyList()
     //var convertedRecipes by remember { mutableStateOf<List<RecipesLists>>(emptyList()) }
@@ -116,6 +119,7 @@ fun HomeScreen(navController: NavController) {
                                 try {
                                     search.value = RecipeRepository().getSearchResult(1, category)
                                     if (search.value != null) {
+                                        nextUrl = search.value!!.next.toString()
                                         search.value!!.results.forEach{ result ->
                                             onAddRecipes(
                                                 result.pk,
@@ -149,11 +153,43 @@ fun HomeScreen(navController: NavController) {
                 CircularProgressIndicator()
             } else {
                 if (convertedRecipes.isNotEmpty()) {
+
                     LazyColumn {
+                        var url =
                         items(convertedRecipes.size) { index ->
                             RecipeCard(convertedRecipes[index],navController)
+                            if (index == (convertedRecipes.size-5)){
+
+                                LaunchedEffect(coroutineScope) {
+                                    try {
+                                        Log.d("SearchScreen", nextUrl.toString())
+
+                                        search.value = RecipeRepository().getSearchResultByUrl(nextUrl)
+                                        Log.d("SearchScreen", search.value.toString())
+                                        if (search.value != null) {
+                                            nextUrl = search.value!!.next.toString()
+                                            search.value!!.results.forEach{ result ->
+                                                onAddRecipes(
+                                                    result.pk,
+                                                    result.title,
+                                                    result.featured_image,
+                                                    result.ingredients
+                                                )
+                                            }
+                                            val data = SearchResponseToRecipesList(search.value!!)
+                                            convertedRecipes = convertedRecipes + data
+                                            Log.d("SearchScreen", convertedRecipes.toString())
+                                        }
+                                    } catch (e: Exception) {
+                                        Log.e("SearchScreen", "Error while getting search result for recipe", e)
+                                    }
+                                }
+
+                            }
                         }
                     }
+
+
                 } else {
                     Text("No recipes found.")
                 }
@@ -192,7 +228,7 @@ fun SearchResponseToRecipesList(SearchResponse:SearchResponse): List<RecipesList
 @Composable
 fun SearchBar() {
     val scope = rememberCoroutineScope() // Create a CoroutineScope
-    var text by remember { mutableStateOf("Search...") }
+    var text by remember { mutableStateOf("") }
     val search = remember { mutableStateOf<SearchResponse?>(null) }
 
     val database = RecipesDatabase.getInstance(LocalContext.current.applicationContext)
@@ -221,7 +257,7 @@ fun SearchBar() {
         value = text,
         onValueChange = { text = it },
         modifier = Modifier.fillMaxWidth(),
-        //label = { Text("Search") },
+        label = { Text("Search...") },
         keyboardOptions = KeyboardOptions.Default.copy(
             imeAction = ImeAction.Search
         ),
