@@ -25,6 +25,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.navigation.NavController
 import com.example.miams.LocalDB.RecipesDatabase
@@ -33,12 +34,14 @@ import com.example.miams.Types.RecipesLists
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.withContext
 import java.net.URL
 
 
 var convertedRecipes by mutableStateOf<List<RecipesLists>>(emptyList())
 var nextUrl = "https://food2fork.ca/api/recipe/search/?page=2&query="
+val isLoading = MutableStateFlow(false)
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -46,9 +49,12 @@ fun HomeScreen(navController: NavController) {
     val scope = rememberCoroutineScope()
     var searchText = remember { mutableStateOf("") }
     var SearchResponse = remember { mutableStateOf(SearchResponse) }
-    var isLoading = remember { mutableStateOf(false) }
+    //var isLoading = remember { mutableStateOf(false) }
+    val isLoading by isLoading.collectAsState()
+    var newLoad = remember { mutableStateOf(false) }
     val categories = listOf("Beef", "Chicken", "Dessert")
     val scrollState = rememberLazyListState()
+
 
     val database = RecipesDatabase.getInstance(LocalContext.current.applicationContext)
     val RecipesDAO = database.RecipesDAO()
@@ -63,11 +69,11 @@ fun HomeScreen(navController: NavController) {
 
     fun getAllRecipes() {
         CoroutineScope(Dispatchers.Main).launch {
-            isLoading.value = true
+            changeStateLoading(true)
             val recipesList = RecipesDAO.getAllRecipes()
             DbRecipes.value = recipesList
             convertedRecipes = DbRecipesToRecipesList(DbRecipes.value)
-            isLoading.value = false
+            changeStateLoading(false)
         }
     }
     LaunchedEffect(Unit) {
@@ -95,6 +101,7 @@ fun HomeScreen(navController: NavController) {
     }
 
     Scaffold(
+
         floatingActionButton = {
             FloatingActionButton(onClick = {
                 scope.launch {
@@ -104,6 +111,7 @@ fun HomeScreen(navController: NavController) {
                 Icon(Icons.Filled.ArrowUpward, contentDescription = "Scroll to top")
             }
         }
+
     ) {
         Column {
             //SearchBar(searchText.value, onSearchTextChange = { searchText.value = it })
@@ -115,6 +123,7 @@ fun HomeScreen(navController: NavController) {
                     Button(
 
                         onClick = {
+                            changeStateLoading(true)
                             scope.launch {
                                 try {
                                     search.value = RecipeRepository().getSearchResult(1, category)
@@ -130,7 +139,7 @@ fun HomeScreen(navController: NavController) {
                                         }
                                         val data = SearchResponseToRecipesList(search.value!!)
                                         convertedRecipes = data
-                                        Log.d("SearchScreen", data.toString())
+                                        changeStateLoading(false)
                                     }
                                 } catch (e: Exception) {
                                     Log.e("SearchScreen", "Error while getting search result for recipe", e)
@@ -149,21 +158,41 @@ fun HomeScreen(navController: NavController) {
                 }
             }
 
-            if (isLoading.value) {
-                CircularProgressIndicator()
+
+            if (isLoading) {
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    CircularProgressIndicator()
+                }
             } else {
                 if (convertedRecipes.isNotEmpty()) {
 
-                    LazyColumn {
+                    newLoad.value = false
+
+                    LazyColumn(state = scrollState) {
                         var url =
                         items(convertedRecipes.size) { index ->
                             RecipeCard(convertedRecipes[index],navController)
                             if (index == (convertedRecipes.size-5)){
 
+                                newLoad.value = false
+
+                                this@LazyColumn.item {
+
+                                    Row(
+                                        modifier = Modifier.fillMaxSize(),
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        CircularProgressIndicator()
+                                    }
+
+                                }
+
                                 LaunchedEffect(coroutineScope) {
                                     try {
                                         Log.d("SearchScreen", nextUrl.toString())
-
                                         search.value = RecipeRepository().getSearchResultByUrl(nextUrl)
                                         Log.d("SearchScreen", search.value.toString())
                                         if (search.value != null) {
@@ -184,19 +213,25 @@ fun HomeScreen(navController: NavController) {
                                         Log.e("SearchScreen", "Error while getting search result for recipe", e)
                                     }
                                 }
+                                newLoad.value = false
 
                             }
                         }
                     }
 
 
-                } else {
+
+                }else{
                     Text("No recipes found.")
                 }
             }
 
         }
     }
+}
+
+fun changeStateLoading(state:Boolean) {
+    isLoading.value = state
 }
 
 fun DbRecipesToRecipesList(DbRecipes:List<Recipes>): List<RecipesLists>{
@@ -230,6 +265,7 @@ fun SearchBar() {
     val scope = rememberCoroutineScope() // Create a CoroutineScope
     var text by remember { mutableStateOf("") }
     val search = remember { mutableStateOf<SearchResponse?>(null) }
+    val focusManager = LocalFocusManager.current
 
     val database = RecipesDatabase.getInstance(LocalContext.current.applicationContext)
     val RecipesDAO = database.RecipesDAO()
@@ -256,13 +292,16 @@ fun SearchBar() {
     TextField(
         value = text,
         onValueChange = { text = it },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth(),
         label = { Text("Search...") },
         keyboardOptions = KeyboardOptions.Default.copy(
             imeAction = ImeAction.Search
         ),
         keyboardActions = KeyboardActions(
             onSearch = {
+                changeStateLoading(true)
+                focusManager.clearFocus()
                 scope.launch {
                     try {
                         search.value = RecipeRepository().getSearchResult(1, text)
@@ -277,14 +316,18 @@ fun SearchBar() {
                                 )
                             }
                             convertedRecipes = data
+                            changeStateLoading(false)
                             Log.d("SearchScreen", data.toString())
                         }
                     } catch (e: Exception) {
                         Log.e("SearchScreen", "Error while getting search result for recipe", e)
                     }
                 }
+
+
             }
         )
+
     )
 }
 
@@ -300,7 +343,7 @@ fun RecipeCard(recipe: RecipesLists,navController: NavController) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
-            .clickable(onClick = {navController.navigate("detail/$id")})
+            .clickable(onClick = { navController.navigate("detail/$id") })
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
 
